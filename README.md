@@ -17,6 +17,7 @@ Change the MySQL passowrd using the below cmd after login
 ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
 
 Client : I am using 'Sequel Pro' it is one of the best My SQL Client.
+https://sequelpro.com/download
 
 Username : root
 Password : root

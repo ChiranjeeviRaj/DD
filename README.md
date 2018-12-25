@@ -9,6 +9,15 @@ $ > ssh-add -K ./id_rsa
 
 Create a My SQL DB account as below
 
+SetUP DB:
+Donwolad and install MYSQL.
+Save the temp passoword.
+Login MY SQL using the root and temp password
+Change the MySQL passowrd using the below cmd after login
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
+
+Client : I am using 'Sequel Pro' it is one of the best My SQL Client.
+
 Username : root
 Password : root
 DB Name : SALESMANAGER

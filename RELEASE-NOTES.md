@@ -1,9 +1,9 @@
-Release changes in version 2.0.5
+Release changes in version 2.2.1
 
 
-- Spring Data JPA
-- Removal of QueryDSL
-- Upgrade of Infinispan
-- Upgrade to Spring 4.2.1
-- Spring Boot
-- UI improvements
+- New REST apis
+- Supports Elastic Search 5.6.12
+- AWS S3 content management system based
+- Bug fixing
+- PRs
+	#240

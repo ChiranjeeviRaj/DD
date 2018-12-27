@@ -23,6 +23,8 @@ import com.salesmanager.core.modules.integration.shipping.model.Packaging;
 import com.salesmanager.core.modules.integration.shipping.model.ShippingQuoteModule;
 import com.salesmanager.core.modules.integration.shipping.model.ShippingQuotePrePostProcessModule;
 import com.salesmanager.core.modules.utils.Encryption;
+import com.shopizer.search.utils.DateUtil;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -75,6 +77,9 @@ public class ShippingServiceImpl implements ShippingService {
 	
 	@Inject
 	private ShippingOriginService shippingOriginService;
+	
+	@Inject
+	private ShippingQuoteService shippingQuoteService;
 	
 	@Inject
 	@Resource(name="shippingModules")
@@ -347,7 +352,7 @@ public class ShippingServiceImpl implements ShippingService {
 	}
 
 	@Override
-	public ShippingQuote getShippingQuote(MerchantStore store, Delivery delivery, List<ShippingProduct> products, Language language) throws ServiceException  {
+	public ShippingQuote getShippingQuote(Long shoppingCartId, MerchantStore store, Delivery delivery, List<ShippingProduct> products, Language language) throws ServiceException  {
 		
 		
 		//ShippingConfiguration -> Global configuration of a given store
@@ -437,7 +442,7 @@ public class ShippingServiceImpl implements ShippingService {
 				configuration = modules.get(module);
 				//use the first active module
 				if(configuration.isActive()) {
-					shippingQuoteModule = this.shippingModules.get(module);
+					shippingQuoteModule = shippingModules.get(module);
 					if(shippingQuoteModule instanceof ShippingQuotePrePostProcessModule) {
 						shippingQuoteModule = null;
 						continue;
@@ -473,17 +478,20 @@ public class ShippingServiceImpl implements ShippingService {
 			List<PackageDetails> packages = this.getPackagesDetails(products, store);
 			
 			//free shipping ?
+			boolean freeShipping = false;
 			if(shippingConfiguration.isFreeShippingEnabled()) {
 				BigDecimal freeShippingAmount = shippingConfiguration.getOrderTotalFreeShipping();
 				if(freeShippingAmount!=null) {
 					if(orderTotal.doubleValue()>freeShippingAmount.doubleValue()) {
 						if(shippingConfiguration.getFreeShippingType() == ShippingType.NATIONAL) {
 							if(store.getCountry().getIsoCode().equals(shipCountry.getIsoCode())) {
+								freeShipping = true;
 								shippingQuote.setFreeShipping(true);
 								shippingQuote.setFreeShippingAmount(freeShippingAmount);
 								return shippingQuote;
 							}
 						} else {//international all
+							freeShipping = true;
 							shippingQuote.setFreeShipping(true);
 							shippingQuote.setFreeShippingAmount(freeShippingAmount);
 							return shippingQuote;
@@ -504,7 +512,7 @@ public class ShippingServiceImpl implements ShippingService {
 			shippingQuote.setApplyTaxOnShipping(shippingConfiguration.isTaxOnShipping());
 			
 
-			Locale locale = languageService.toLocale(language);
+			Locale locale = languageService.toLocale(language, store);
 			
 			//invoke pre processors
 			//the main pre-processor determines at runtime the shipping module
@@ -519,9 +527,9 @@ public class ShippingServiceImpl implements ShippingService {
 						configuration = modules.get(shippingModule.getCode());
 						if(configuration!=null) {
 							if(configuration.isActive()) {
-						moduleName = shippingModule.getCode();
-						shippingQuoteModule = this.shippingModules.get(shippingModule.getCode());
-						configuration = modules.get(shippingModule.getCode());
+								moduleName = shippingModule.getCode();
+								shippingQuoteModule = this.shippingModules.get(shippingModule.getCode());
+								configuration = modules.get(shippingModule.getCode());
 							} //TODO use default
 						}
 						
@@ -625,7 +633,7 @@ public class ShippingServiceImpl implements ShippingService {
 					shippingOptions = new ArrayList<ShippingOption>();
 					shippingOptions.add(selectedOption);
 				}
-			
+
 			}
 			
 			/** set final delivery address **/
@@ -655,6 +663,55 @@ public class ShippingServiceImpl implements ShippingService {
 				}
 			}
 			
+			if(shippingQuote!=null && CollectionUtils.isNotEmpty(shippingQuote.getShippingOptions())) {
+				//save SHIPPING OPTIONS
+				List<ShippingOption> finalShippingOptions = shippingQuote.getShippingOptions();
+				for(ShippingOption option : finalShippingOptions) {
+					
+					//transform to Quote
+					Quote q = new Quote();
+					q.setCartId(shoppingCartId);
+					q.setDelivery(delivery);
+					if(!StringUtils.isBlank(option.getEstimatedNumberOfDays())) {
+						try {
+							q.setEstimatedNumberOfDays(new Integer(option.getEstimatedNumberOfDays()));
+						} catch(Exception e) {
+							LOGGER.error("Cannot cast to integer " + option.getEstimatedNumberOfDays());
+						}
+					}
+					
+					if(freeShipping) {
+						q.setFreeShipping(true);
+						q.setPrice(new BigDecimal(0));
+						q.setModule("FREE");
+						q.setOptionCode("FREE");
+						q.setOptionName("FREE");
+					} else {
+						q.setModule(option.getShippingModuleCode());
+						q.setOptionCode(option.getOptionCode());
+						if(!StringUtils.isBlank(option.getOptionDeliveryDate())) {
+							try {
+							q.setOptionDeliveryDate(DateUtil.formatDate(option.getOptionDeliveryDate()));
+							} catch(Exception e) {
+								LOGGER.error("Cannot transform to date " + option.getOptionDeliveryDate());
+							}
+						}
+						q.setOptionName(option.getOptionName());
+						q.setOptionShippingDate(new Date());
+						q.setPrice(option.getOptionPrice());
+						
+					}
+					
+					if(handlingFees != null) {
+						q.setHandling(handlingFees);
+					}
+					
+					q.setQuoteDate(new Date());
+					shippingQuoteService.save(q);
+					option.setShippingQuoteOptionId(q.getId());
+					
+				}
+			}
 			
 			
 			
@@ -868,5 +925,11 @@ public class ShippingServiceImpl implements ShippingService {
 		
 		
 		return metaData;
+	}
+
+	@Override
+	public boolean hasTaxOnShipping(MerchantStore store) throws ServiceException {
+		ShippingConfiguration shippingConfiguration = getShippingConfiguration(store);
+		return shippingConfiguration.isTaxOnShipping();
 	}
 }

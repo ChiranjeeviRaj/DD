@@ -10,6 +10,7 @@ import com.salesmanager.core.business.services.reference.country.CountryService;
 import com.salesmanager.core.business.services.reference.language.LanguageService;
 import com.salesmanager.core.business.services.reference.zone.ZoneService;
 import com.salesmanager.core.business.services.system.EmailService;
+import com.salesmanager.core.business.services.user.GroupService;
 import com.salesmanager.core.business.utils.ajax.AjaxPageableResponse;
 import com.salesmanager.core.business.utils.ajax.AjaxResponse;
 import com.salesmanager.core.model.customer.Customer;
@@ -23,6 +24,8 @@ import com.salesmanager.core.model.merchant.MerchantStore;
 import com.salesmanager.core.model.reference.country.Country;
 import com.salesmanager.core.model.reference.language.Language;
 import com.salesmanager.core.model.reference.zone.Zone;
+import com.salesmanager.core.model.user.Group;
+import com.salesmanager.core.model.user.GroupType;
 import com.salesmanager.shop.admin.model.customer.attribute.CustomerOption;
 import com.salesmanager.shop.admin.model.customer.attribute.CustomerOptionValue;
 import com.salesmanager.shop.admin.model.userpassword.UserReset;
@@ -30,6 +33,7 @@ import com.salesmanager.shop.admin.model.web.Menu;
 import com.salesmanager.shop.constants.Constants;
 import com.salesmanager.shop.constants.EmailConstants;
 import com.salesmanager.shop.populator.customer.ReadableCustomerOptionPopulator;
+import com.salesmanager.shop.store.controller.customer.facade.CustomerFacade;
 import com.salesmanager.shop.utils.EmailUtils;
 import com.salesmanager.shop.utils.LabelUtils;
 import com.salesmanager.shop.utils.LocaleUtils;
@@ -69,10 +73,13 @@ public class CustomerController {
 	
 	private static final String CUSTOMER_ID_PARAMETER = "customer";
 	
-	private final static String RESET_PASSWORD_TPL = "email_template_password_reset_customer.ftl";
+	
 	
 	@Inject
 	private LabelUtils messages;
+	
+	@Inject
+	private GroupService groupService;
 	
 	@Inject
 	private CustomerService customerService;
@@ -108,6 +115,9 @@ public class CustomerController {
 	@Inject
 	private EmailUtils emailUtils;
 	
+	@Inject
+	private CustomerFacade customerFacade;
+	
 	
 	/**
 	 * Customer details
@@ -123,6 +133,15 @@ public class CustomerController {
 			
 		//display menu
 		this.setMenu(model, request);
+		
+		//get groups
+		List<Group> groups = new ArrayList<Group>();
+		List<Group> userGroups = groupService.listGroup(GroupType.CUSTOMER);
+		for(Group group : userGroups) {
+			groups.add(group);
+		}
+		
+		model.addAttribute("groups",groups);
 		
 		MerchantStore store = (MerchantStore)request.getAttribute(Constants.ADMIN_STORE);
 		
@@ -238,6 +257,15 @@ public class CustomerController {
 		
 		model.addAttribute("languages",languages);
 		
+		//get groups
+		List<Group> groups = new ArrayList<Group>();
+		List<Group> userGroups = groupService.listGroup(GroupType.CUSTOMER);
+		for(Group group : userGroups) {
+			groups.add(group);
+		}
+		
+		model.addAttribute("groups",groups);
+		
 		this.getCustomerOptions(model, customer, store, language);
 		
 		//get countries
@@ -320,6 +348,15 @@ public class CustomerController {
 			newCustomer.setMerchantStore(merchantStore);
 		}
 		
+		List<Group> submitedGroups = customer.getGroups();
+		Set<Integer> ids = new HashSet<Integer>();
+		for(Group group : submitedGroups) {
+			ids.add(Integer.parseInt(group.getGroupName()));
+		}
+		
+		List<Group> newGroups = groupService.listGroupByIds(ids);
+		newCustomer.setGroups(newGroups);
+		
 
 		newCustomer.setEmailAddress(customer.getEmailAddress() );		
 		
@@ -332,22 +369,30 @@ public class CustomerController {
 		
 
 		
-		if (customer.getShowDeliveryStateList().equalsIgnoreCase("yes" )) {
-			deliveryZone = zoneService.getByCode(customer.getDelivery().getZone().getCode());
-			customer.getDelivery().setState( null );
+		if ("yes".equalsIgnoreCase(customer.getShowDeliveryStateList())) {
+			if(customer.getDelivery().getZone()!=null) {
+				deliveryZone = zoneService.getByCode(customer.getDelivery().getZone().getCode());
+				customer.getDelivery().setState( null );
+			}
 			
-		}else if (customer.getShowDeliveryStateList().equalsIgnoreCase("no" )){
-			deliveryZone = null ;
-			customer.getDelivery().setState( customer.getDelivery().getState() );
+		}else if ("no".equalsIgnoreCase(customer.getShowDeliveryStateList())){
+			if(customer.getDelivery().getState()!=null) {
+				deliveryZone = null ;
+				customer.getDelivery().setState( customer.getDelivery().getState() );
+			}
 		}
 	
-		if (customer.getShowBillingStateList().equalsIgnoreCase("yes" )) {
-			billingZone = zoneService.getByCode(customer.getBilling().getZone().getCode());
-			customer.getBilling().setState( null );
+		if ("yes".equalsIgnoreCase(customer.getShowBillingStateList())) {
+			if(customer.getBilling().getZone()!=null) {
+				billingZone = zoneService.getByCode(customer.getBilling().getZone().getCode());
+				customer.getBilling().setState( null );
+			}
 			
-		}else if (customer.getShowBillingStateList().equalsIgnoreCase("no" )){
-			billingZone = null ;
-			customer.getBilling().setState( customer.getBilling().getState() );
+		}else if ("no".equalsIgnoreCase(customer.getShowBillingStateList())){
+			if(customer.getBilling().getState()!=null) {
+				billingZone = null ;
+				customer.getBilling().setState( customer.getBilling().getState() );
+			}
 		}
 				
 
@@ -657,53 +702,9 @@ public class CustomerController {
 			
 			Language userLanguage = customer.getDefaultLanguage();
 			
-			Locale customerLocale = LocaleUtils.getLocale(userLanguage);
+			customerFacade.resetPassword(customer, store, userLanguage);
 			
-			String password = UserReset.generateRandomString();
-			String encodedPassword = passwordEncoder.encode(password);
-			
-			customer.setPassword(encodedPassword);
-			
-			customerService.saveOrUpdate(customer);
-			
-			//send email
-			
-			try {
-
-				//creation of a user, send an email
-				String[] storeEmail = {store.getStoreEmailAddress()};
-				
-				
-				Map<String, String> templateTokens = emailUtils.createEmailObjectsMap(request.getContextPath(), store, messages, customerLocale);
-				templateTokens.put(EmailConstants.LABEL_HI, messages.getMessage("label.generic.hi", customerLocale));
-		        templateTokens.put(EmailConstants.EMAIL_CUSTOMER_FIRSTNAME, customer.getBilling().getFirstName());
-		        templateTokens.put(EmailConstants.EMAIL_CUSTOMER_LASTNAME, customer.getBilling().getLastName());
-				templateTokens.put(EmailConstants.EMAIL_RESET_PASSWORD_TXT, messages.getMessage("email.customer.resetpassword.text", customerLocale));
-				templateTokens.put(EmailConstants.EMAIL_CONTACT_OWNER, messages.getMessage("email.contactowner", storeEmail, customerLocale));
-				templateTokens.put(EmailConstants.EMAIL_PASSWORD_LABEL, messages.getMessage("label.generic.password",customerLocale));
-				templateTokens.put(EmailConstants.EMAIL_CUSTOMER_PASSWORD, password);
-
-
-				Email email = new Email();
-				email.setFrom(store.getStorename());
-				email.setFromEmail(store.getStoreEmailAddress());
-				email.setSubject(messages.getMessage("label.generic.changepassword",customerLocale));
-				email.setTo(customer.getEmailAddress());
-				email.setTemplateName(RESET_PASSWORD_TPL);
-				email.setTemplateTokens(templateTokens);
-	
-	
-				
-				emailService.sendHtmlEmail(store, email);
-				resp.setStatus(AjaxResponse.RESPONSE_STATUS_SUCCESS);
-			
-			} catch (Exception e) {
-				LOGGER.error("Cannot send email to user",e);
-				resp.setStatus(AjaxResponse.RESPONSE_STATUS_FAIURE);
-			}
-			
-			
-			
+			resp.setStatus(AjaxResponse.RESPONSE_STATUS_SUCCESS);
 			
 		} catch (Exception e) {
 			LOGGER.error("An exception occured while changing password",e);

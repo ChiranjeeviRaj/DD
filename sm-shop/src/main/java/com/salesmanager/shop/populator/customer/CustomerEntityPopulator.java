@@ -11,8 +11,8 @@ import com.salesmanager.core.business.utils.AbstractDataPopulator;
 import com.salesmanager.core.model.customer.Customer;
 import com.salesmanager.core.model.merchant.MerchantStore;
 import com.salesmanager.core.model.reference.language.Language;
-import com.salesmanager.shop.model.customer.Address;
 import com.salesmanager.shop.model.customer.CustomerEntity;
+import com.salesmanager.shop.model.customer.address.Address;
 
 
 
@@ -68,6 +68,14 @@ public class CustomerEntityPopulator
 
                 target.setBilling( address );
             }
+            
+    		if(source.getCustomerReviewAvg() != null) {
+    			target.setRating(source.getCustomerReviewAvg().doubleValue());
+    		}
+    		
+    		if(source.getCustomerReviewCount() != null) {
+    			target.setRatingCount(source.getCustomerReviewCount().intValue());
+    		}
 
             if ( source.getDelivery() != null )
             {

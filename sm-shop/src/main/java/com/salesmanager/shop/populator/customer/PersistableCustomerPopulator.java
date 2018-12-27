@@ -1,12 +1,12 @@
 package com.salesmanager.shop.populator.customer;
 
-import com.salesmanager.core.model.customer.Customer;
 import com.salesmanager.core.business.exception.ConversionException;
+import com.salesmanager.core.business.utils.AbstractDataPopulator;
+import com.salesmanager.core.model.customer.Customer;
 import com.salesmanager.core.model.merchant.MerchantStore;
 import com.salesmanager.core.model.reference.language.Language;
-import com.salesmanager.core.business.utils.AbstractDataPopulator;
-import com.salesmanager.shop.model.customer.Address;
 import com.salesmanager.shop.model.customer.PersistableCustomer;
+import com.salesmanager.shop.model.customer.address.Address;
 
 public class PersistableCustomerPopulator extends
 		AbstractDataPopulator<Customer, PersistableCustomer> {
@@ -40,6 +40,16 @@ public class PersistableCustomerPopulator extends
 				}
 				
 				target.setBilling(address);
+			}
+			
+			target.setProvider(source.getProvider());
+			
+			if(source.getCustomerReviewAvg() != null) {
+				target.setRating(source.getCustomerReviewAvg().doubleValue());
+			}
+			
+			if(source.getCustomerReviewCount() != null) {
+				target.setRatingCount(source.getCustomerReviewCount().intValue());
 			}
 			
 			if(source.getDelivery()!=null) {

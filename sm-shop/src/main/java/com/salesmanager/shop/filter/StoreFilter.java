@@ -24,8 +24,8 @@ import com.salesmanager.core.model.system.MerchantConfiguration;
 import com.salesmanager.core.model.system.MerchantConfigurationType;
 import com.salesmanager.shop.constants.Constants;
 import com.salesmanager.shop.model.catalog.category.ReadableCategory;
-import com.salesmanager.shop.model.customer.Address;
 import com.salesmanager.shop.model.customer.AnonymousCustomer;
+import com.salesmanager.shop.model.customer.address.Address;
 import com.salesmanager.shop.model.shop.Breadcrumb;
 import com.salesmanager.shop.model.shop.BreadcrumbItem;
 import com.salesmanager.shop.model.shop.BreadcrumbItemType;
@@ -125,7 +125,6 @@ public class StoreFilter extends HandlerInterceptorAdapter {
 			 * exit from here !
 			 */
 			//System.out.println("****** " + request.getRequestURL().toString());
-			//System.out.println("****** " + request.getRequestURI().toString());
 			if(request.getRequestURL().toString().toLowerCase().contains(SERVICES_URL_PATTERN)
 				|| request.getRequestURL().toString().toLowerCase().contains(REFERENCE_URL_PATTERN)	
 			) {
@@ -241,7 +240,8 @@ public class StoreFilter extends HandlerInterceptorAdapter {
 				request.setAttribute(Constants.LANGUAGE, language);
 				
 				
-				Locale locale = languageService.toLocale(language);
+				Locale locale = languageService.toLocale(language, store);
+				request.setAttribute(Constants.LOCALE, locale);
 				
 				//Locale locale = LocaleContextHolder.getLocale();
 				LocaleContextHolder.setLocale(locale);
@@ -606,7 +606,7 @@ public class StoreFilter extends HandlerInterceptorAdapter {
 			
 			if(objects==null) {
 				//load categories
-				loadedCategories = categoryFacade.getCategoryHierarchy(store, 0, language);
+				loadedCategories = categoryFacade.getCategoryHierarchy(store, 0, language, null);//null filter
 				objects = new ConcurrentHashMap<String, List<ReadableCategory>>();
 				objects.put(language.getCode(), loadedCategories);
 				webApplicationCache.putInCache(categoriesKey.toString(), objects);
@@ -616,7 +616,7 @@ public class StoreFilter extends HandlerInterceptorAdapter {
 			}
 			
 		} else {
-			loadedCategories = categoryFacade.getCategoryHierarchy(store, 0, language);
+			loadedCategories = categoryFacade.getCategoryHierarchy(store, 0, language, null);//null filter
 		}
 		
 		if(loadedCategories!=null) {
@@ -625,85 +625,6 @@ public class StoreFilter extends HandlerInterceptorAdapter {
 		
 	}
 
-	/*@SuppressWarnings("unchecked")
-	private void getTopCategories(MerchantStore store, Language language, HttpServletRequest request) throws Exception {
-		   
-
-			*//**
-			 * Top categories
-			 * Top categories are implemented as Category entity
-			 * CategoryDescription will provide attributes name for the
-			 * label to be displayed and seUrl for the friendly url page
-			 *//*
-			
-			//build the key
-			*//**
-			 * The categories is kept as a Map<String,Object>
-			 * The key is <MERCHANT_ID>_CATEGORYLOCALE
-			 * The value is a List of Category object
-			 *//*
-			
-			StringBuilder categoriesKey = new StringBuilder();
-			categoriesKey
-			.append(store.getId())
-			.append("_")
-			.append(Constants.CATEGORIES_CACHE_KEY)
-			.append("-")
-			.append(language.getCode());
-			
-			StringBuilder categoriesKeyMissed = new StringBuilder();
-			categoriesKeyMissed
-			.append(categoriesKey.toString())
-			.append(Constants.MISSED_CACHE_KEY);
-			
-			//Map<String, List<Category>> objects = null;
-			Map<String, List<ReadableCategory>> objects = null;
-			
-			if(store.isUseCache()) {
-			
-				//get from the cache
-				//objects = (Map<String, List<Category>>) cache.getFromCache(categoriesKey.toString());
-				objects = (Map<String, List<ReadableCategory>>) cache.getFromCache(categoriesKey.toString());
-			
-
-				if(objects==null) {
-					//Boolean missedContent = (Boolean)cache.getFromCache(categoriesKeyMissed.toString());
-
-					//if(missedContent==null) {
-	
-						//Get top categories from the database
-						objects = this.getCategories(store, language);
-	
-						if(objects!=null) {
-							//put in cache
-							cache.putInCache(objects, categoriesKey.toString());
-						} else {
-							//put in missed cache
-							//cache.putInCache(new Boolean(true), categoriesKeyMissed.toString());
-						}
-						
-					//} 
-				}
-				
-			} else {
-				objects = this.getCategories(store, language);
-			}
-			
-			if(objects!=null && objects.size()>0) {
-
-				
-				//List<Category> categories = objects.get(categoriesKey.toString());
-				List<ReadableCategory> categories = objects.get(categoriesKey.toString());
-				
-				if(categories!=null) {
-					request.setAttribute(Constants.REQUEST_TOP_CATEGORIES, categories);
-				}
-				
-				
-			}
-		   
-	   }
-*/	
 	
 	   private Map<String, List<ContentDescription>> getContentPagesNames(MerchantStore store, Language language) throws Exception {
 		   

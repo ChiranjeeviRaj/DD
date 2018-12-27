@@ -35,10 +35,10 @@ import com.salesmanager.shop.constants.Constants;
 import com.salesmanager.shop.model.customer.AnonymousCustomer;
 import com.salesmanager.shop.model.customer.PersistableCustomer;
 import com.salesmanager.shop.model.customer.ReadableDelivery;
-import com.salesmanager.shop.model.order.ReadableOrderTotal;
-import com.salesmanager.shop.model.order.ReadableShippingSummary;
 import com.salesmanager.shop.model.order.ReadableShopOrder;
 import com.salesmanager.shop.model.order.ShopOrder;
+import com.salesmanager.shop.model.order.shipping.ReadableShippingSummary;
+import com.salesmanager.shop.model.order.total.ReadableOrderTotal;
 import com.salesmanager.shop.model.shoppingcart.ShoppingCartData;
 import com.salesmanager.shop.populator.customer.ReadableCustomerDeliveryAddressPopulator;
 import com.salesmanager.shop.populator.order.ReadableOrderTotalPopulator;
@@ -64,6 +64,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
@@ -338,7 +339,7 @@ public class ShoppingOrderController extends AbstractController {
 		
 		if(quote!=null && quote.getShippingReturnCode()!=null && quote.getShippingReturnCode().equals(ShippingQuote.NO_SHIPPING_MODULE_CONFIGURED)) {
 			LOGGER.error("Shipping quote error " + quote.getShippingReturnCode());
-			model.addAttribute("errorMessages", quote.getShippingReturnCode());
+			model.addAttribute("errorMessages", messages.getMessage(quote.getShippingReturnCode(), locale, quote.getShippingReturnCode()));
 		}
 		
 		if(quote!=null && !StringUtils.isBlank(quote.getQuoteError())) {
@@ -358,7 +359,8 @@ public class ShoppingOrderController extends AbstractController {
 		//not free and no payment methods
 		if(CollectionUtils.isEmpty(paymentMethods) && !freeShoppingCart) {
 			LOGGER.error("No payment method configured");
-			model.addAttribute("errorMessages", "No payments configured");
+			model.addAttribute("errorMessages", messages.getMessage("payment.not.configured", locale,
+					"No payments configured"));
 		}
 		
 		if(!CollectionUtils.isEmpty(paymentMethods)) {//select default payment method
@@ -376,11 +378,11 @@ public class ShoppingOrderController extends AbstractController {
 			}
 			
 			order.setDefaultPaymentMethodCode(defaultPaymentSelected.getPaymentMethodCode());
-			
+
 		}
 		
 		//readable shopping cart items for order summary box
-        ShoppingCartData shoppingCart = shoppingCartFacade.getShoppingCartData(cart);
+        ShoppingCartData shoppingCart = shoppingCartFacade.getShoppingCartData(cart, language);
         model.addAttribute( "cart", shoppingCart );
 		//TODO filter here
 
@@ -615,7 +617,7 @@ public class ShoppingOrderController extends AbstractController {
 		Language language = (Language)request.getAttribute("LANGUAGE");
 		//validate if session has expired
 		
-		model.addAttribute("order", order);//TODO remove
+		model.addAttribute("order", order);
 		
 		Map<String, Object> configs = (Map<String, Object>) request.getAttribute(Constants.REQUEST_CONFIGS);
 		
@@ -634,7 +636,14 @@ public class ShoppingOrderController extends AbstractController {
 			
 		try {
 				
-				
+				/**
+				 * 
+				 * Retrieve shopping cart and metadata 
+				 * (information required to process order)
+				 * 
+				 * - Cart rerieved from cookie or from user session
+				 * - Retrieves payment metadata
+				 */
 				ShippingMetaData shippingMetaData = shippingService.getShippingMetaData(store);
 				model.addAttribute("shippingMetaData",shippingMetaData);
 				//basic stuff
@@ -662,7 +671,7 @@ public class ShoppingOrderController extends AbstractController {
 			    cart = shoppingCartFacade.getShoppingCartModel(shoppingCartCode, store);
 			    
 				//readable shopping cart items for order summary box
-		        ShoppingCartData shoppingCart = shoppingCartFacade.getShoppingCartData(cart);
+		        ShoppingCartData shoppingCart = shoppingCartFacade.getShoppingCartData(cart, language);
 		        model.addAttribute( "cart", shoppingCart );
 
 				Set<ShoppingCartItem> items = cart.getLineItems();
@@ -695,6 +704,11 @@ public class ShoppingOrderController extends AbstractController {
 					
 					
 				}
+				
+				/**
+				 * Prepare failure data
+				 * - Get another shipping quote
+				 */
 				
 				ShippingQuote quote = orderFacade.getShippingQuote(order.getCustomer(), cart, order, store, language);
 				
@@ -808,6 +822,11 @@ public class ShoppingOrderController extends AbstractController {
 					order.setShippingSummary(summary);
 				}
 				
+				
+				/**
+				 * Calculate order total summary
+				 */
+				
 				OrderTotalSummary totalSummary = super.getSessionAttribute(Constants.ORDER_SUMMARY, request);
 				
 				if(totalSummary==null) {
@@ -825,7 +844,16 @@ public class ShoppingOrderController extends AbstractController {
 		        {
 		            LOGGER.info( "found {} validation error while validating in customer registration ",
 		                         bindingResult.getErrorCount() );
-		    		StringBuilder template = new StringBuilder().append(ControllerConstants.Tiles.Checkout.checkout).append(".").append(store.getStoreTemplate());
+		            String message = null;
+		            List<ObjectError> errors = bindingResult.getAllErrors();
+		            if(!CollectionUtils.isEmpty(errors)) {
+		            	for(ObjectError error : errors) {
+		            		message = error.getDefaultMessage();
+		            		break;
+		            	}
+		            }
+        			model.addAttribute("errorMessages", message);
+		            StringBuilder template = new StringBuilder().append(ControllerConstants.Tiles.Checkout.checkout).append(".").append(store.getStoreTemplate());
 		    		return template.toString();
 	
 		        }

@@ -6,6 +6,7 @@ import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -22,6 +23,7 @@ import org.hibernate.annotations.Type;
 import com.salesmanager.core.constants.SchemaConstant;
 import com.salesmanager.core.model.common.audit.AuditListener;
 import com.salesmanager.core.model.generic.SalesManagerEntity;
+import com.salesmanager.core.model.merchant.MerchantStore;
 
 
 /**
@@ -31,7 +33,7 @@ import com.salesmanager.core.model.generic.SalesManagerEntity;
  */
 @Entity
 @EntityListeners(value = AuditListener.class)
-@Table(name = "CUSTMER_OPTIN", schema= SchemaConstant.SALESMANAGER_SCHEMA,uniqueConstraints=
+@Table(name = "CUSTOMER_OPTIN", schema= SchemaConstant.SALESMANAGER_SCHEMA,uniqueConstraints=
 @UniqueConstraint(columnNames = {"EMAIL", "OPTIN_ID"}))
 public class CustomerOptin extends SalesManagerEntity<Long, CustomerOptin> implements Serializable {
 
@@ -57,17 +59,21 @@ public class CustomerOptin extends SalesManagerEntity<Long, CustomerOptin> imple
 	@JoinColumn(name="OPTIN_ID")
 	private Optin optin;
 	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name="MERCHANT_ID", nullable=false)
+	private MerchantStore merchantStore;
+	
 	@Column(name="FIRST")
 	private String firstName;
 	
 	@Column(name="LAST")
 	private String lastName;
 	
-	@Column(name="EMAIL")
+	@Column(name="EMAIL", nullable=false)
 	private String email;
 	
 	@Column(name="VALUE")
-	@Type(type = "org.hibernate.type.StringClobType")
+	@Type(type = "org.hibernate.type.TextType")
 	private String value;
 
 	@Override
@@ -126,6 +132,14 @@ public class CustomerOptin extends SalesManagerEntity<Long, CustomerOptin> imple
 
 	public void setValue(String value) {
 		this.value = value;
+	}
+
+	public MerchantStore getMerchantStore() {
+		return merchantStore;
+	}
+
+	public void setMerchantStore(MerchantStore merchantStore) {
+		this.merchantStore = merchantStore;
 	}
 
 }

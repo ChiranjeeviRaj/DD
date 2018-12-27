@@ -1,40 +1,34 @@
 package com.salesmanager.core.business.modules.cms.impl;
 
-
-
 /**
- * Used for managing images
+ * Infinispan asset manager
+ * 
  * @author casams1
  *
  */
 public class StoreCacheManagerImpl extends CacheManagerImpl {
-	
-	
-	private static  StoreCacheManagerImpl cacheManager = null;
-	private final static String NAMED_CACHE = "StoreRepository";
-	
 
-	
 
-	private StoreCacheManagerImpl() {
-		
-		super.init(NAMED_CACHE);
-		
-		
-	}
+  private final static String NAMED_CACHE = "StoreRepository";
+  private String root;
 
-	
-	public static StoreCacheManagerImpl getInstance() {
-		
-		if(cacheManager==null) {
-			cacheManager = new StoreCacheManagerImpl();
 
-		}
-		
-		return cacheManager;
-		
-		
-	}
+  public StoreCacheManagerImpl(String location, String root) {
+    super.init(NAMED_CACHE, location);
+    this.root = root;
+  }
+
+
+  @Override
+  public String getRootName() {
+    return root;
+  }
+
+
+  @Override
+  public String getLocation() {
+    return location;
+  }
 
 
 

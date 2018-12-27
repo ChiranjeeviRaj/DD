@@ -1,5 +1,6 @@
 package com.salesmanager.core.business.services.reference.init;
 
+import java.nio.charset.Charset;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.salesmanager.core.business.constants.Constants;
 import com.salesmanager.core.business.exception.ServiceException;
+import com.salesmanager.core.business.services.catalog.product.manufacturer.ManufacturerService;
 import com.salesmanager.core.business.services.catalog.product.type.ProductTypeService;
 import com.salesmanager.core.business.services.merchant.MerchantStoreService;
 import com.salesmanager.core.business.services.reference.country.CountryService;
@@ -26,6 +29,8 @@ import com.salesmanager.core.business.services.reference.zone.ZoneService;
 import com.salesmanager.core.business.services.system.ModuleConfigurationService;
 import com.salesmanager.core.business.services.tax.TaxClassService;
 import com.salesmanager.core.constants.SchemaConstant;
+import com.salesmanager.core.model.catalog.product.manufacturer.Manufacturer;
+import com.salesmanager.core.model.catalog.product.manufacturer.ManufacturerDescription;
 import com.salesmanager.core.model.catalog.product.type.ProductType;
 import com.salesmanager.core.model.merchant.MerchantStore;
 import com.salesmanager.core.model.reference.country.Country;
@@ -41,6 +46,8 @@ import com.salesmanager.core.model.tax.taxclass.TaxClass;
 public class InitializationDatabaseImpl implements InitializationDatabase {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(InitializationDatabaseImpl.class);
+	
+
 	
 
 	
@@ -70,6 +77,9 @@ public class InitializationDatabaseImpl implements InitializationDatabase {
 	
 	@Inject
 	private IntegrationModulesLoader modulesLoader;
+	
+	@Inject
+	private ManufacturerService manufacturerService;
 	
 	@Inject
 	private ModuleConfigurationService moduleConfigurationService;
@@ -102,12 +112,8 @@ public class InitializationDatabaseImpl implements InitializationDatabase {
 	private void createCurrencies() throws ServiceException {
 		LOGGER.info(String.format("%s : Populating Currencies ", name));
 
-		//Locale [] locales = Locale.getAvailableLocales();
-		//Locale l = locales[0];
-		
 		for (String code : SchemaConstant.CURRENCY_MAP.keySet()) {
-
-		      
+  
             try {
             	java.util.Currency c = java.util.Currency.getInstance(code);
             	
@@ -140,6 +146,8 @@ public class InitializationDatabaseImpl implements InitializationDatabase {
 				
 				for (Language language : languages) {
 					String name = locale.getDisplayCountry(new Locale(language.getCode()));
+					//byte[] ptext = value.getBytes(Constants.ISO_8859_1); 
+					//String name = new String(ptext, Constants.UTF_8); 
 					CountryDescription description = new CountryDescription(language, name);
 					countryService.addCountryDescription(country, description);
 				}
@@ -214,9 +222,9 @@ public class InitializationDatabaseImpl implements InitializationDatabase {
 		store.setStorecity("My city");
 		store.setStoreaddress("1234 Street address");
 		store.setStorepostalcode("H2H-2H2");
-		store.setStoreEmailAddress("test@test.com");
+		store.setStoreEmailAddress("john@test.com");
 		store.setDomainName("localhost:8080");
-		store.setStoreTemplate("bootstrap");
+		store.setStoreTemplate("generic");
 		store.setLanguages(supportedLanguages);
 		
 		merchantService.create(store);
@@ -226,6 +234,20 @@ public class InitializationDatabaseImpl implements InitializationDatabase {
 		taxclass.setMerchantStore(store);
 		
 		taxClassService.create(taxclass);
+		
+		//create default manufacturer
+		Manufacturer defaultManufacturer = new Manufacturer();
+		defaultManufacturer.setCode("DEFAULT");
+		defaultManufacturer.setMerchantStore(store);
+		
+		ManufacturerDescription manufacturerDescription = new ManufacturerDescription();
+		manufacturerDescription.setLanguage(en);
+		manufacturerDescription.setName("DEFAULT");
+		manufacturerDescription.setManufacturer(defaultManufacturer);
+		manufacturerDescription.setDescription("DEFAULT");
+		defaultManufacturer.getDescriptions().add(manufacturerDescription);
+		
+		manufacturerService.create(defaultManufacturer);
 		
 		
 	}

@@ -2,10 +2,10 @@ package com.salesmanager.test.shop.controller.customer.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.salesmanager.shop.model.customer.Address;
 import com.salesmanager.shop.model.customer.Customer;
 import com.salesmanager.shop.model.customer.PersistableCustomer;
 import com.salesmanager.shop.model.customer.ReadableCustomer;
+import com.salesmanager.shop.model.customer.address.Address;
 import com.salesmanager.shop.model.customer.attribute.CustomerOptionDescription;
 import com.salesmanager.shop.model.customer.attribute.CustomerOptionValueDescription;
 import com.salesmanager.shop.model.customer.attribute.PersistableCustomerOption;
@@ -138,8 +138,9 @@ public class CustomerRESTControllerTest {
 		customer.setEmailAddress("carl@csticonsulting.com");
 		customer.setGender("M");
 		customer.setLanguage("en");
-		customer.setEncodedPassword("5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8");
-		customer.setUserName("testuser2");
+		//customer.setEncodedPassword("5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8");
+		customer.setClearPassword("password");
+		customer.setUserName("testuser");
 		
 		Address address = new Address();
 		address.setAddress("123 my street");

@@ -24,7 +24,7 @@
 						//remove delete
 						$("#imageControlRemove").html('');
 						//add field
-						$("#imageControl").html('<input class=\"input-file\" id=\"file[0]\" name=\"file[0]\" type=\"file\">');
+						$("#imageControl").html('<input class=\"input-file\" id=\"file\" name=\"file\" type=\"file\">');
 						$(".alert-success").show();
 						
 					} else {
@@ -71,7 +71,7 @@
 						<div class="controls" id="imageControl">
 						
 									   <c:choose>
-				                        		<c:when test="${store.storeLogo==null}">
+				                        		<c:when test="${empty store.storeLogo}">
 				                                    <input class="input-file" name="file" type="file"><br/>
 				                                </c:when>
 				                                <c:otherwise>

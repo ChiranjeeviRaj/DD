@@ -6,8 +6,8 @@ import com.salesmanager.core.model.customer.Customer;
 import com.salesmanager.core.model.customer.attribute.CustomerAttribute;
 import com.salesmanager.core.model.merchant.MerchantStore;
 import com.salesmanager.core.model.reference.language.Language;
-import com.salesmanager.shop.model.customer.Address;
 import com.salesmanager.shop.model.customer.ReadableCustomer;
+import com.salesmanager.shop.model.customer.address.Address;
 import com.salesmanager.shop.model.customer.attribute.CustomerOptionDescription;
 import com.salesmanager.shop.model.customer.attribute.CustomerOptionValueDescription;
 import com.salesmanager.shop.model.customer.attribute.ReadableCustomerAttribute;
@@ -24,6 +24,10 @@ public class ReadableCustomerPopulator extends
 			MerchantStore store, Language language) throws ConversionException {
 
 		try {
+			
+			if(target == null) {
+				target = new ReadableCustomer();
+			}
 			
 		if(source.getId()!=null && source.getId()>0) {
 			target.setId(source.getId());
@@ -49,6 +53,14 @@ public class ReadableCustomerPopulator extends
 			target.setLastName(address.getLastName());
 			
 			target.setBilling(address);
+		}
+		
+		if(source.getCustomerReviewAvg() != null) {
+			target.setRating(source.getCustomerReviewAvg().doubleValue());
+		}
+		
+		if(source.getCustomerReviewCount() != null) {
+			target.setRatingCount(source.getCustomerReviewCount().intValue());
 		}
 		
 		if(source.getDelivery()!=null) {

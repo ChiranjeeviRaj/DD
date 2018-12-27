@@ -1,16 +1,19 @@
 package com.salesmanager.shop.utils;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.Properties;
+
+import javax.annotation.Resource;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import com.salesmanager.core.business.utils.CoreConfiguration;
 import com.salesmanager.core.model.catalog.product.file.DigitalProduct;
 import com.salesmanager.core.model.content.FileContentType;
 import com.salesmanager.core.model.merchant.MerchantStore;
-import com.salesmanager.core.business.utils.CoreConfiguration;
 import com.salesmanager.shop.constants.ApplicationConstants;
 import com.salesmanager.shop.constants.Constants;
 import com.salesmanager.shop.model.order.ReadableOrderProductDownload;
@@ -20,6 +23,11 @@ public class FilePathUtils {
 	
 	@Inject
 	private CoreConfiguration coreConfiguration;
+	
+	private static final String CONTEXT_PATH = "CONTEXT_PATH";
+
+	
+	public @Resource(name="shopizer-properties") Properties properties = new Properties();//shopizer-properties
 	
 	@Inject
 	@Qualifier("img")
@@ -38,8 +46,23 @@ public class FilePathUtils {
 	 * @param imageName
 	 * @return
 	 */
-	public String buildStaticFilePath(MerchantStore store, String imageName) {
-		return new StringBuilder().append(Constants.FILES_URI).append(Constants.SLASH).append(store.getCode()).append(Constants.SLASH).append(imageName).toString();
+	public String buildStaticFilePath(MerchantStore store, String fileName) {
+		StringBuilder sb = new StringBuilder().append(Constants.FILES_URI).append(Constants.SLASH).append(store.getCode()).append(Constants.SLASH);
+		if(! StringUtils.isBlank(fileName)) {
+			sb.append(fileName);
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * 
+	 * @param store
+	 * @param fileName
+	 * @return
+	 */
+	public String buildStaticFilePath(MerchantStore store) {
+		StringBuilder sb = new StringBuilder().append(Constants.STATIC_URI).append(Constants.FILES_URI).append(Constants.SLASH).append(store.getCode()).append(Constants.SLASH);
+		return sb.toString();
 	}
 	
 	public String buildAdminDownloadProductFilePath(MerchantStore store, DigitalProduct digitalProduct) {
@@ -210,6 +233,12 @@ public class FilePathUtils {
 		return resourcePath.toString();
 		
 	}
+	
+	public String getContextPath() {
+		return properties.getProperty(CONTEXT_PATH);
+	}
+	
+	
 	
 
 }

@@ -1,20 +1,26 @@
 package com.salesmanager.shop.model.catalog.product;
 
-public class PersistableImage {
+import com.salesmanager.shop.model.Entity;
+
+public class PersistableImage extends Entity {
+	
+
+	   private static final long serialVersionUID = 1L;
+	   private boolean defaultImage;
+	   private int imageType = 0;
+	   private String name = null;
+	   private String path;
+
 	
 	   private byte[] bytes = null;
-
-
 	   private String contentType = null;
 	   
-	   private String imageName = null;
 	   
 	   /**
 	    * An external image url
 	    */
 	   private String imageUrl = null;
 	   
-	   private int imageType = 0;
 
 
 	public void setBytes(byte[] bytes) {
@@ -37,16 +43,6 @@ public class PersistableImage {
 	}
 
 
-	public void setImageName(String imageName) {
-		this.imageName = imageName;
-	}
-
-
-	public String getImageName() {
-		return imageName;
-	}
-
-
 	public String getImageUrl() {
 		return imageUrl;
 	}
@@ -64,6 +60,36 @@ public class PersistableImage {
 
 	public void setImageType(int imageType) {
 		this.imageType = imageType;
+	}
+
+
+	public boolean isDefaultImage() {
+		return defaultImage;
+	}
+
+
+	public void setDefaultImage(boolean defaultImage) {
+		this.defaultImage = defaultImage;
+	}
+
+
+	public String getName() {
+		return name;
+	}
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+
+	public String getPath() {
+		return path;
+	}
+
+
+	public void setPath(String path) {
+		this.path = path;
 	}
 
 }

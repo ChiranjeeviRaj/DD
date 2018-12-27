@@ -3,42 +3,21 @@
  */
 package com.salesmanager.shop.store.controller.customer.facade;
 
-import com.salesmanager.core.business.exception.ConversionException;
-import com.salesmanager.core.business.services.catalog.product.PricingService;
-import com.salesmanager.core.business.services.catalog.product.ProductService;
-import com.salesmanager.core.business.services.catalog.product.attribute.ProductAttributeService;
-import com.salesmanager.core.business.services.customer.CustomerService;
-import com.salesmanager.core.business.services.customer.attribute.CustomerOptionService;
-import com.salesmanager.core.business.services.customer.attribute.CustomerOptionValueService;
-import com.salesmanager.core.business.services.reference.country.CountryService;
-import com.salesmanager.core.business.services.reference.language.LanguageService;
-import com.salesmanager.core.business.services.reference.zone.ZoneService;
-import com.salesmanager.core.business.services.shoppingcart.ShoppingCartCalculationService;
-import com.salesmanager.core.business.services.shoppingcart.ShoppingCartService;
-import com.salesmanager.core.business.services.system.EmailService;
-import com.salesmanager.core.business.services.user.GroupService;
-import com.salesmanager.core.business.services.user.PermissionService;
-import com.salesmanager.core.model.customer.Customer;
-import com.salesmanager.core.model.merchant.MerchantStore;
-import com.salesmanager.core.model.reference.country.Country;
-import com.salesmanager.core.model.reference.language.Language;
-import com.salesmanager.core.model.reference.zone.Zone;
-import com.salesmanager.core.model.shoppingcart.ShoppingCart;
-import com.salesmanager.core.model.user.Group;
-import com.salesmanager.core.model.user.GroupType;
-import com.salesmanager.core.model.user.Permission;
-import com.salesmanager.shop.admin.model.userpassword.UserReset;
-import com.salesmanager.shop.constants.Constants;
-import com.salesmanager.shop.model.customer.Address;
-import com.salesmanager.shop.model.customer.CustomerEntity;
-import com.salesmanager.shop.model.customer.PersistableCustomer;
-import com.salesmanager.shop.model.customer.ReadableCustomer;
-import com.salesmanager.shop.populator.customer.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -48,23 +27,73 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-//import com.salesmanager.core.business.customer.CustomerRegistrationException;
-//import com.salesmanager.core.business.customer.exception.CustomerNotFoundException;
+import com.salesmanager.core.business.exception.ConversionException;
+import com.salesmanager.core.business.modules.email.Email;
+import com.salesmanager.core.business.services.catalog.product.PricingService;
+import com.salesmanager.core.business.services.catalog.product.ProductService;
+import com.salesmanager.core.business.services.catalog.product.attribute.ProductAttributeService;
+import com.salesmanager.core.business.services.customer.CustomerService;
+import com.salesmanager.core.business.services.customer.attribute.CustomerOptionService;
+import com.salesmanager.core.business.services.customer.attribute.CustomerOptionValueService;
+import com.salesmanager.core.business.services.customer.optin.CustomerOptinService;
+import com.salesmanager.core.business.services.customer.review.CustomerReviewService;
+import com.salesmanager.core.business.services.reference.country.CountryService;
+import com.salesmanager.core.business.services.reference.language.LanguageService;
+import com.salesmanager.core.business.services.reference.zone.ZoneService;
+import com.salesmanager.core.business.services.shoppingcart.ShoppingCartCalculationService;
+import com.salesmanager.core.business.services.shoppingcart.ShoppingCartService;
+import com.salesmanager.core.business.services.system.EmailService;
+import com.salesmanager.core.business.services.system.optin.OptinService;
+import com.salesmanager.core.business.services.user.GroupService;
+import com.salesmanager.core.business.services.user.PermissionService;
+import com.salesmanager.core.business.utils.CoreConfiguration;
+import com.salesmanager.core.business.utils.ajax.AjaxResponse;
+import com.salesmanager.core.model.customer.Customer;
+import com.salesmanager.core.model.customer.review.CustomerReview;
+import com.salesmanager.core.model.merchant.MerchantStore;
+import com.salesmanager.core.model.reference.country.Country;
+import com.salesmanager.core.model.reference.language.Language;
+import com.salesmanager.core.model.reference.zone.Zone;
+import com.salesmanager.core.model.shoppingcart.ShoppingCart;
+import com.salesmanager.core.model.system.optin.Optin;
+import com.salesmanager.core.model.system.optin.OptinType;
+import com.salesmanager.core.model.user.Group;
+import com.salesmanager.core.model.user.GroupType;
+import com.salesmanager.core.model.user.Permission;
+import com.salesmanager.shop.admin.model.userpassword.UserReset;
+import com.salesmanager.shop.constants.Constants;
+import com.salesmanager.shop.constants.EmailConstants;
+import com.salesmanager.shop.model.customer.CustomerEntity;
+import com.salesmanager.shop.model.customer.PersistableCustomer;
+import com.salesmanager.shop.model.customer.PersistableCustomerReview;
+import com.salesmanager.shop.model.customer.ReadableCustomer;
+import com.salesmanager.shop.model.customer.ReadableCustomerReview;
+import com.salesmanager.shop.model.customer.UserAlreadyExistException;
+import com.salesmanager.shop.model.customer.address.Address;
+import com.salesmanager.shop.model.customer.optin.PersistableCustomerOptin;
+import com.salesmanager.shop.populator.customer.CustomerBillingAddressPopulator;
+import com.salesmanager.shop.populator.customer.CustomerDeliveryAddressPopulator;
+import com.salesmanager.shop.populator.customer.CustomerEntityPopulator;
+import com.salesmanager.shop.populator.customer.CustomerPopulator;
+import com.salesmanager.shop.populator.customer.PersistableCustomerBillingAddressPopulator;
+import com.salesmanager.shop.populator.customer.PersistableCustomerReviewPopulator;
+import com.salesmanager.shop.populator.customer.PersistableCustomerShippingAddressPopulator;
+import com.salesmanager.shop.populator.customer.ReadableCustomerPopulator;
+import com.salesmanager.shop.populator.customer.ReadableCustomerReviewPopulator;
+import com.salesmanager.shop.utils.EmailTemplatesUtils;
+import com.salesmanager.shop.utils.EmailUtils;
+import com.salesmanager.shop.utils.ImageFilePath;
+import com.salesmanager.shop.utils.LabelUtils;
+import com.salesmanager.shop.utils.LocaleUtils;
 
 
 /**
  * Customer Facade work as an abstraction layer between Controller and Service layer.
  * It work as an entry point to service layer.
  * @author Umesh Awasthi
+ * @version 2.2.1
  *
  */
-////http://stackoverflow.com/questions/17444258/how-to-use-new-passwordencoder-from-spring-security
 
 @Service("customerFacade")
 public class CustomerFacadeImpl implements CustomerFacade
@@ -73,26 +102,22 @@ public class CustomerFacadeImpl implements CustomerFacade
 	private static final Logger LOG = LoggerFactory.getLogger(CustomerFacadeImpl.class);
 	private final static int USERNAME_LENGTH=6;
 	
+	private final static String RESET_PASSWORD_TPL = "email_template_password_reset_customer.ftl";
+	
 	public final static String ROLE_PREFIX = "ROLE_";//Spring Security 4
 
 
 	 @Inject
      private CustomerService customerService;
+	 
+	 @Inject
+	 private OptinService optinService;
+	 
+	 @Inject
+     private CustomerOptinService customerOptinService;
 
      @Inject
      private ShoppingCartService shoppingCartService;
-
-     @Inject
-     private ShoppingCartCalculationService shoppingCartCalculationService;
-
-     @Inject
-     private PricingService pricingService;
-
-     @Inject
-     private ProductService productService;
-
-     @Inject
-     private ProductAttributeService productAttributeService;
      
      @Inject
      private LanguageService languageService;
@@ -102,6 +127,9 @@ public class CustomerFacadeImpl implements CustomerFacade
 
      @Inject
      private CustomerOptionService customerOptionService;
+     
+ 	@Inject
+ 	private LabelUtils messages;
 
 
      @Inject
@@ -124,10 +152,25 @@ public class CustomerFacadeImpl implements CustomerFacade
  	 private EmailService emailService;
  	 
  	 @Inject
+ 	 private EmailTemplatesUtils emailTemplatesUtils;
+ 	 
+ 	 @Inject
      private AuthenticationManager customerAuthenticationManager;
+ 	 
+ 	 @Inject
+ 	 private CustomerReviewService customerReviewService;
 
 
-
+ 	@Inject
+ 	private CoreConfiguration coreConfiguration;
+ 	
+	
+	@Inject
+	private EmailUtils emailUtils;
+	
+	@Inject
+	@Qualifier("img")
+	private ImageFilePath imageUtils;
 
     /**
      * Method used to fetch customer based on the username and storecode.
@@ -281,10 +324,15 @@ public class CustomerFacadeImpl implements CustomerFacade
 
 
     @Override
-    public CustomerEntity registerCustomer( final PersistableCustomer customer,final MerchantStore merchantStore, Language language )
+    public PersistableCustomer registerCustomer( final PersistableCustomer customer,final MerchantStore merchantStore, Language language )
         throws Exception
     {
-       LOG.info( "Starting customer registration process.." );
+        LOG.info( "Starting customer registration process.." );
+        
+        if(this.userExist(customer.getUserName())) {
+        	throw new UserAlreadyExistException("User already exist");
+        }
+        
         Customer customerModel= getCustomerModel(customer,merchantStore,language);
         if(customerModel == null){
             LOG.equals( "Unable to create customer in system" );
@@ -296,7 +344,9 @@ public class CustomerFacadeImpl implements CustomerFacade
         customerService.saveOrUpdate( customerModel );
         
        LOG.info( "Returning customer data to controller.." );
-       return customerEntityPoulator(customerModel,merchantStore);
+       //return customerEntityPoulator(customerModel,merchantStore);
+       customer.setId(customerModel.getId());
+       return customer;
      }
     
     @Override
@@ -311,6 +361,7 @@ public class CustomerFacadeImpl implements CustomerFacade
         populator.setLanguageService(languageService);
         populator.setLanguageService(languageService);
         populator.setZoneService(zoneService);
+        populator.setGroupService(groupService);
 
 
             customerModel= populator.populate( customer, merchantStore, language );
@@ -330,29 +381,6 @@ public class CustomerFacadeImpl implements CustomerFacade
     }
     
 
-    
-    
-    private CustomerEntity customerEntityPoulator(final Customer customerModel,final MerchantStore merchantStore){
-        CustomerEntityPopulator customerPopulator=new CustomerEntityPopulator();
-        try
-        {
-            CustomerEntity customerEntity= customerPopulator.populate( customerModel, merchantStore, merchantStore.getDefaultLanguage() );
-            if(customerEntity !=null){
-                customerEntity.setId( customerModel.getId() );
-                LOG.info( "Retunring populated instance of customer entity" );
-                return customerEntity;
-            }
-            LOG.warn( "Seems some issue with customerEntity populator..retunring null instance of customerEntity " );
-            return null;
-              
-        }
-        catch ( ConversionException e )
-        {
-           LOG.error( "Error while converting customer model to customer entity ",e );
-          
-        }
-        return null;
-    }
 
 
 	@Override
@@ -535,19 +563,270 @@ public class CustomerFacadeImpl implements CustomerFacade
         populator.setCustomerOptionValueService(customerOptionValueService);
         populator.setLanguageService(languageService);
         populator.setLanguageService(languageService);
+        populator.setGroupService(groupService);
         populator.setZoneService(zoneService);
+        populator.setGroupService(groupService);
 
 
             customerModel= populator.populate( customer, customerModel, merchantStore, language );
-			//set groups
-            //if(!StringUtils.isBlank(customerModel.getPassword()) && !StringUtils.isBlank(customerModel.getNick())) {
-            //	customerModel.setPassword(passwordEncoder.encodePassword(customer.getPassword(), null));
-            //	setCustomerModelDefaultProperties(customerModel, merchantStore);
-            //}
 
             LOG.info( "About to persist customer to database." );
             customerService.saveOrUpdate( customerModel );
             return customerModel;
 	}
+
+
+	@Override
+	public void create(PersistableCustomer customer, MerchantStore store) throws Exception {
+		
+		if(this.userExist(customer.getUserName())) {
+			throw new UserAlreadyExistException("User already exist");
+		}
+		
+		Customer c = this.populate(customer, store);
+		
+		customerService.save(c);
+		customer.setId(c.getId());
+		
+		this.notifyNewCustomer(customer, store, c.getDefaultLanguage());
+		
+		/**
+		 * For security reasons set empty passwords
+		 */
+		//customer.setEncodedPassword(null);
+		//customer.setClearPassword(null);
+		
+	}
+	
+	private boolean userExist(String userName) throws Exception {
+		boolean exist = false;
+		Customer customer = customerService.getByNick(userName);
+		if(customer != null) {
+			exist = true;
+		}
+		return exist;
+	}
+	
+	private Customer populate(PersistableCustomer customer, MerchantStore store) throws Exception {
+		
+		Customer cust = new Customer();
+		
+		CustomerPopulator populator = new CustomerPopulator();
+		populator.setCountryService(countryService);
+		populator.setCustomerOptionService(customerOptionService);
+		populator.setCustomerOptionValueService(customerOptionValueService);
+		populator.setLanguageService(languageService);
+		populator.setLanguageService(languageService);
+		populator.setZoneService(zoneService);
+		populator.setGroupService(groupService);
+		populator.populate(customer, cust, store, store.getDefaultLanguage());
+		
+		List<Group> groups = groupService.listGroup(GroupType.CUSTOMER);
+		cust.setGroups(groups);
+
+		Locale customerLocale = LocaleUtils.getLocale(cust.getDefaultLanguage());
+		
+		String password = customer.getClearPassword();
+		if(StringUtils.isBlank(password)) {
+			password = UserReset.generateRandomString();
+			customer.setClearPassword(password);
+		}
+
+		@SuppressWarnings("deprecation")
+		String encodedPassword = passwordEncoder.encode(password);
+		if(!StringUtils.isBlank(customer.getEncodedPassword())) {
+			encodedPassword = customer.getEncodedPassword();
+			//customer.setClearPassword("");
+		}
+		
+		cust.setPassword(encodedPassword);
+
+		return cust;
+		
+	}
+	
+	private void notifyNewCustomer(PersistableCustomer customer, MerchantStore store, Language lang) throws Exception {
+		
+		
+		Locale customerLocale = LocaleUtils.getLocale(lang);
+		emailTemplatesUtils.sendRegistrationEmail(customer, store, customerLocale, (String)coreConfiguration.getProperty("SHOP_SCHEME"));
+
+		
+	}
+
+
+	@Override
+	public void update(PersistableCustomer customer, MerchantStore store) throws Exception {
+		
+		
+		if(customer.getId() == null || customer.getId().longValue() == 0) {
+			throw new Exception("Can't update a customer with null id");
+		}
+		
+		Customer cust = customerService.getById(customer.getId());
+
+		
+		CustomerPopulator populator = new CustomerPopulator();
+		populator.setCountryService(countryService);
+		populator.setCustomerOptionService(customerOptionService);
+		populator.setCustomerOptionValueService(customerOptionValueService);
+		populator.setLanguageService(languageService);
+		populator.setLanguageService(languageService);
+		populator.setZoneService(zoneService);
+		populator.setGroupService(groupService);
+		populator.populate(customer, cust, store, store.getDefaultLanguage());
+		
+
+		String password = customer.getClearPassword();
+		if(StringUtils.isBlank(password)) {
+			password = UserReset.generateRandomString();
+			customer.setClearPassword(password);
+		}
+
+		@SuppressWarnings("deprecation")
+		String encodedPassword = passwordEncoder.encode(password);
+		if(!StringUtils.isBlank(customer.getEncodedPassword())) {
+			encodedPassword = customer.getEncodedPassword();
+			customer.setClearPassword("");
+		}
+		
+		customer.setEncodedPassword(encodedPassword);
+		customerService.save(cust);
+		customer.setId(cust.getId());
+
+		
+	}
+
+
+	@Override
+	public void saveOrUpdateCustomerReview(PersistableCustomerReview review, MerchantStore store, Language language)
+			throws Exception {
+		CustomerReview rev = new CustomerReview();
+		
+		PersistableCustomerReviewPopulator populator = new PersistableCustomerReviewPopulator();
+		populator.setCustomerService(customerService);
+		populator.setLanguageService(languageService);
+		populator.populate(review, rev, store, language);
+		
+		customerReviewService.create(rev);
+		
+		review.setId(rev.getId());
+		
+	}
+
+
+	@Override
+	public List<ReadableCustomerReview> getAllCustomerReviewsByReviewed(Customer customer, MerchantStore store,
+			Language language) throws Exception {
+		Validate.notNull(customer,"Reviewed customer cannot be null");
+		
+		List<CustomerReview> reviews = customerReviewService.getByReviewedCustomer(customer);
+		
+		ReadableCustomerReviewPopulator populator = new ReadableCustomerReviewPopulator();
+		
+		
+		List<ReadableCustomerReview> customerReviews = new ArrayList<ReadableCustomerReview>();
+		
+		for(CustomerReview review : reviews) {
+			ReadableCustomerReview readableReview = new ReadableCustomerReview();
+			populator.populate(review, readableReview, store, language);
+			customerReviews.add(readableReview);
+		}
+		
+		
+		
+		return customerReviews;
+	}
+
+
+	@Override
+	public void deleteCustomerReview(CustomerReview review, MerchantStore store, Language language) throws Exception {
+		customerReviewService.delete(review);
+		
+	}
+
+
+	@Override
+	public void optinCustomer(PersistableCustomerOptin optin, MerchantStore store) throws Exception {
+		Optin optinDef = optinService.getOptinByCode(store, OptinType.NEWSLETTER.name());
+		
+		if(optinDef == null) {
+			LOG.error("Optin " + OptinType.NEWSLETTER.name() + " does not exists");
+			throw new Exception("Optin newsletter does not exist");
+		}
+		
+		//check if customer optin exists
+		com.salesmanager.core.model.system.optin.CustomerOptin customerOptin = customerOptinService.findByEmailAddress(store, optin.getEmail(), OptinType.NEWSLETTER.name());
+
+		if(customerOptin != null) {
+			//exists update
+			customerOptin.setEmail(optin.getEmail());
+			customerOptin.setFirstName(optin.getFirstName());
+			customerOptin.setLastName(optin.getLastName());
+		} else {
+			customerOptin = new com.salesmanager.core.model.system.optin.CustomerOptin();
+			customerOptin.setEmail(optin.getEmail());
+			customerOptin.setFirstName(optin.getFirstName());
+			customerOptin.setLastName(optin.getLastName());
+			customerOptin.setOptinDate(new Date());
+			customerOptin.setOptin(optinDef);
+			customerOptin.setMerchantStore(store);
+		}
+		
+		customerOptinService.save(customerOptin);
+		
+	}
+
+
+	@Override
+	public void resetPassword(Customer customer, MerchantStore store, Language language) throws Exception {
+		
+		
+		String password = UserReset.generateRandomString();
+		String encodedPassword = passwordEncoder.encode(password);
+		
+		customer.setPassword(encodedPassword);
+		customerService.saveOrUpdate(customer);
+		
+		Locale locale = languageService.toLocale(language, store);
+		
+		//send email
+		
+		try {
+
+			//creation of a user, send an email
+			String[] storeEmail = {store.getStoreEmailAddress()};
+			
+			
+			Map<String, String> templateTokens = emailUtils.createEmailObjectsMap(imageUtils.getContextPath(), store, messages, locale);
+			templateTokens.put(EmailConstants.LABEL_HI, messages.getMessage("label.generic.hi", locale));
+	        templateTokens.put(EmailConstants.EMAIL_CUSTOMER_FIRSTNAME, customer.getBilling().getFirstName());
+	        templateTokens.put(EmailConstants.EMAIL_CUSTOMER_LASTNAME, customer.getBilling().getLastName());
+			templateTokens.put(EmailConstants.EMAIL_RESET_PASSWORD_TXT, messages.getMessage("email.customer.resetpassword.text", locale));
+			templateTokens.put(EmailConstants.EMAIL_CONTACT_OWNER, messages.getMessage("email.contactowner", storeEmail, locale));
+			templateTokens.put(EmailConstants.EMAIL_PASSWORD_LABEL, messages.getMessage("label.generic.password",locale));
+			templateTokens.put(EmailConstants.EMAIL_CUSTOMER_PASSWORD, password);
+
+
+			Email email = new Email();
+			email.setFrom(store.getStorename());
+			email.setFromEmail(store.getStoreEmailAddress());
+			email.setSubject(messages.getMessage("label.generic.changepassword",locale));
+			email.setTo(customer.getEmailAddress());
+			email.setTemplateName(RESET_PASSWORD_TPL);
+			email.setTemplateTokens(templateTokens);
+
+
+			
+			emailService.sendHtmlEmail(store, email);
+		
+		} catch (Exception e) {
+			LOG.error("Cannot send email to customer",e);
+		}
+
+		
+	}
+
+
 
 }

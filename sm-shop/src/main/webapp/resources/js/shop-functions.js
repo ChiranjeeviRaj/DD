@@ -20,9 +20,25 @@ function log(value) {
 	}
 }
 
-function loadProducts(url,divProductsContainer) {
-	$(divProductsContainer).showLoading();
+function showSMLoading(element) {
+	if ($.isFunction(showTemplateLoading)) {
+		showTemplateLoading(element);
+	} else {
+		$(element).showLoading();
+	}
+	
+}
 
+function hideSMLoading(element) {
+	if ($.isFunction(hideTemplateLoading)) {
+		hideTemplateLoading(element);
+	} else {
+		$(element).hideLoading();
+	}
+}
+
+function loadProducts(url,divProductsContainer) {
+	showSMLoading(divProductsContainer);
 	$.ajax({
 			type: 'POST',
 			dataType: "json",
@@ -35,7 +51,7 @@ function loadProducts(url,divProductsContainer) {
 
 			},
 			error: function(jqXHR,textStatus,errorThrown) { 
-				$(divProductsContainer).hideLoading();
+				hideSMLoading(divProductsContainer);
 				alert('Error ' + jqXHR + "-" + textStatus + "-" + errorThrown);
 			}
 			
@@ -46,6 +62,7 @@ function loadProducts(url,divProductsContainer) {
 }
 
 
+
 function searchProducts(url,divProductsContainer,q,filter) {
 	
 	//log(q);
@@ -53,13 +70,17 @@ function searchProducts(url,divProductsContainer,q,filter) {
 	if(q==null || q=='') {
 		return;
 	}
-
+	
+	var query ='\"query\":{\"query_string\":{\"fields\" : [\"name^5\", \"description\", \"tags\"], \"query\" : \"' + q + '", \"use_dis_max\" : true }}';
+	var aggregations = '\"aggregations\": {\"categories\": {\"terms\": {\"field\": \"categories\"}}}';
+	
+	
     //category aggregations
-	var aggregations = '\"aggregations\" : { \"categories\" : { \"terms\" : {\"field\" : \"categories\"}}}';
+	//var aggregations = '\"aggregations\": {\"categories\": { \"terms\": {\"field\": \"categories\"}}}';
     var highlights = null;
 	var queryStart = '{';
 
-	var query = '\"query\":{\"query_string\" : {\"fields\" : [\"name^3\", \"description\", \"tags\"], \"query\" : \"' + q + '", \"use_dis_max\" : true }}';
+	//var query = '\"query\":{\"query_string\" : {\"fields\" : [\"name^3\", \"description\", \"tags\"], \"query\" : \"' + q + '", \"use_dis_max\" : true }}';
 	if(filter!=null && filter!='') {
 		query = query + ',' + filter + '}}';
 	}

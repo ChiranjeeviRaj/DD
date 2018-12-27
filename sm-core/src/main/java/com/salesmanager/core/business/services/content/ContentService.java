@@ -79,6 +79,13 @@ public interface ContentService
      */
     public void removeFile( String merchantStoreCode, FileContentType fileContentType, String fileName) throws ServiceException;
     
+    /**
+     * Removes static file
+     * FileType is no more important
+     * @param storeCode
+     * @param filename
+     */
+    public void removeFile(String storeCode, String filename) throws ServiceException;
     
     /**
      * Method to remove all images for a given merchant.It will take merchant store as an input and will
@@ -146,5 +153,16 @@ public interface ContentService
 	Content getByLanguage(Long id, Language language) throws ServiceException;
 
 	ContentDescription getBySeUrl(MerchantStore store, String seUrl);
+	
+	/**
+	 * Finds content for a specific Merchant for a specific ContentType where content
+	 * code is like a given prefix in a specific language
+	 * @param type
+	 * @param codeLike
+	 * @param store
+	 * @param lamguage
+	 * @return
+	 */
+	List<Content> getByCodeLike(ContentType type, String codeLike, MerchantStore store, Language language);
 
 }

@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.salesmanager.shop.model.catalog.SearchProductList;
 import com.salesmanager.shop.model.catalog.SearchProductRequest;
 import com.salesmanager.shop.model.catalog.manufacturer.PersistableManufacturer;
-
+@Ignore
 public class SearchProductAPITest {
 	
 	private RestTemplate restTemplate;
@@ -32,9 +32,8 @@ public class SearchProductAPITest {
 		headers.add("Authorization", "Basic " + new String(encodedAuthorisation));
 		return headers;
 	}
-	
-	
-	//@Test
+
+	@Test
 	@Ignore
 	public void testSearch() throws Exception {
 		

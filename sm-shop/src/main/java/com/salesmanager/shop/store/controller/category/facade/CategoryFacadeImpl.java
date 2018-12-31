@@ -247,4 +247,71 @@ public class CategoryFacadeImpl implements CategoryFacade {
 		
 	}
 
+	@Override
+	public List<ReadableCategory> getCategoryHierarchyByLoca(MerchantStore store, int depth, Language language,
+			String filter, String locationName) throws Exception {
+		
+		
+		List<Category> categories = null;
+		
+		if(!StringUtils.isBlank(filter)) {
+			//as of 2.2.0 only filter by featured is supported
+			if(FEATURED_CATEGORY.equals(filter)) {
+				categories = categoryService.listByDepthFilterByFeaturedAndLoca(store, depth, language, locationName);
+			} else {
+				categories = categoryService.listByDepthAndLoc(store, depth, language, locationName);
+			}
+		} else {
+			categories = categoryService.listByDepthAndLoc(store, depth, language, locationName);
+		}
+		
+		 
+		List<ReadableCategory> returnValues = new ArrayList<ReadableCategory>();
+		
+		Map<Long, ReadableCategory> categoryMap = new ConcurrentHashMap<Long, ReadableCategory>();
+		
+		ReadableCategoryPopulator categoryPopulator = new ReadableCategoryPopulator();
+		
+		for(Category category : categories) {
+			
+			if(category.isVisible()) {
+				ReadableCategory readableCategory = new ReadableCategory();
+				categoryPopulator.populate(category, readableCategory, store, language);
+				
+				returnValues.add(readableCategory);
+				categoryMap.put(category.getId(), readableCategory);
+			}
+		}
+		
+		for(ReadableCategory category : returnValues) {
+			
+			if(category.isVisible()) {
+				if(category.getParent()!=null) {
+				    ReadableCategory parentCategory = categoryMap.get(category.getParent().getId());
+					if(parentCategory!=null) {
+						parentCategory.getChildren().add(category);
+					}
+				}
+			}
+		}
+		
+		returnValues = new ArrayList<ReadableCategory>();
+		for(Object obj : categoryMap.values()) {
+			
+			ReadableCategory readableCategory = (ReadableCategory)obj;
+			if(readableCategory.getDepth()==0) {//only from root
+				returnValues.add(readableCategory);
+			}
+		}
+		
+        Collections.sort(returnValues, new Comparator<ReadableCategory>() {
+            @Override
+            public int compare(final ReadableCategory firstCategory, final ReadableCategory secondCategory) {
+                return firstCategory.getSortOrder() - secondCategory.getSortOrder();
+            }
+         } );
+		
+		return returnValues;
+	}
+
 }

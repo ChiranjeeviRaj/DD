@@ -104,6 +104,10 @@ public interface CategoryService extends SalesManagerEntityService<Long, Categor
 	List<Category> listByIds(MerchantStore store, List<Long> ids,
 			Language language);
 
+	List<Category> listByDepthFilterByFeaturedAndLoca(MerchantStore store, int depth, Language language, String locationName);
+
+	List<Category> listByDepthAndLoc(MerchantStore store, int depth, Language language, String locationName);
+
 
 	
 	

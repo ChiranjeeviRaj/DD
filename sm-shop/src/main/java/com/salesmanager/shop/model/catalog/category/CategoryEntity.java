@@ -17,6 +17,7 @@ public class CategoryEntity extends Category implements Serializable {
 	private boolean featured;
 	private String lineage;
 	private int depth;
+	private String categoryImage;
 	private Category parent;
 	
 
@@ -55,6 +56,12 @@ public class CategoryEntity extends Category implements Serializable {
 	}
 	public void setFeatured(boolean featured) {
 		this.featured = featured;
+	}
+	public String getCategoryImage() {
+		return categoryImage;
+	}
+	public void setCategoryImage(String categoryImage) {
+		this.categoryImage = categoryImage;
 	}
 
 }

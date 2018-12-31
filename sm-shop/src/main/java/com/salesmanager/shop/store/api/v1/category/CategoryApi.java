@@ -129,6 +129,42 @@ public class CategoryApi {
 		}
 	}
 	
+/**
+ * Get all Category using location name
+ * @param locationName
+ * @param filter
+ * @param lang
+ * @param request
+ * @param response
+ * @return List<ReadableCategory>
+ * @throws Exception
+ */
+	@RequestMapping(value = "/category/locaion/{locationName}", method=RequestMethod.GET)
+	public @ResponseBody List <ReadableCategory> getCategoryByLocation(
+			@PathVariable final String locationName,
+			@RequestParam(value = "filter", required=false) String filter,
+			@RequestParam(value = "lang", required=false) 
+			String lang, HttpServletRequest request, HttpServletResponse response) throws Exception {
+	
+		try {
+			MerchantStore merchantStore = storeFacade.getByCode(request);
+			Language language = languageUtils.getRESTLanguage(request, merchantStore);	
+			
+			List <ReadableCategory> category  = categoryFacade.getCategoryHierarchyByLoca(merchantStore, 0, language, filter, locationName);
+
+
+			return category;
+		
+		} catch (Exception e) {
+			LOGGER.error("Error while getting root category",e);
+			try {
+				response.sendError(503, "Error while getting root category " + e.getMessage());
+			} catch (Exception ignore) {
+			}
+			return null;
+		}
+	}
+	
 	/**
 	 * Category creation
 	 */

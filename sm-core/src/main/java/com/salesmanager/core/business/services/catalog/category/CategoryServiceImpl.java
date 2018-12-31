@@ -402,6 +402,16 @@ public class CategoryServiceImpl extends SalesManagerEntityServiceImpl<Long, Cat
 			throw new ServiceException(e);
 		}
 	}
+
+	@Override
+	public List<Category> listByDepthFilterByFeaturedAndLoca(MerchantStore store, int depth, Language language, String locationName) {
+		return categoryRepository.findByDepthFilterByFeaturedAndLoc(store.getId(), depth, language.getId(), locationName);
+	}
+
+	@Override
+	public List<Category> listByDepthAndLoc(MerchantStore store, int depth, Language language, String locationName) {
+		return categoryRepository.findByDepthAndLoca(store.getId(), depth, locationName);
+		}
 	
 	
 

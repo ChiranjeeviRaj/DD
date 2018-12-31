@@ -17,6 +17,34 @@ response.setDateHeader ("Expires", -1);
         <!-- home banner -->
         <!-- slider-area-start -->
 		<div class="slider-area">
+		<div class="slider-area">
+		
+		
+			<div class="sy-box banner-slider"><div class="sy-slides-wrap"><div class="sy-slides-crop"><section id="home-banner" class="sy-list" style="left: 0%;">
+	<article class="sy-slide horizontal useCSS sy-active" style="left: 0%;">
+		<!--
+		<div class="banner-text">
+			<h2>
+				Vintage bags</h2>
+			<p>
+				Summer styles available</p>
+			<div class="slider-button store-btn button-link">
+				<div class="store-btn-addtocart">
+					<a class="more" href="#">More details</a></div>
+			</div>
+		</div>
+                -->
+		<div class="image-content">
+			<img alt="text" src="/resources/templates/generic/img/banner-resized.jpg"></div>
+	</article>
+</section></div><div class="sy-filler" style="padding-top: 53.7208%;"></div></div></div>
+<p>
+	&nbsp;</p>
+<div class="container">
+	<h2>
+		Featured items</h2>
+</div>
+		</div>
 		<c:choose>
 		<c:when test="${requestScope.CONTENT['bannerImage']!=null}">
 			<sm:pageContent contentCode="bannerImage"/>

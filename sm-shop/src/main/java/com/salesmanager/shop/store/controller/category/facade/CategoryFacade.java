@@ -28,4 +28,7 @@ public interface CategoryFacade {
 	
 	void deleteCategory(Category category) throws Exception;
 
+	List<ReadableCategory> getCategoryHierarchyByLoca(MerchantStore merchantStore, int i, Language language,
+			String filter, String locationName) throws Exception;
+
 }

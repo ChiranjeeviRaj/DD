@@ -36,7 +36,7 @@ public class ProductManagementAPITest {
 	
 	private Long testProductID;
 
-	
+
 	public HttpHeaders getHeader(){
 		HttpHeaders headers = new HttpHeaders();
 		MediaType mediaType = new MediaType("application", "json", Charset.forName("UTF-8"));
@@ -52,6 +52,7 @@ public class ProductManagementAPITest {
 	/**
 	 * Creates a Manufacturer reference object that can be used when creating
 	 * a product
+	 * http://localhost:8080/api/v1/products
 	 * @throws Exception
 	 */
 	@Test

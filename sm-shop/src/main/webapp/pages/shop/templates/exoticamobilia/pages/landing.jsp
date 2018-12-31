@@ -18,6 +18,33 @@ response.setDateHeader ("Expires", -1);
  <div id="shop" class="">
  
        <div style="margin-top: 0px;" class="banner center-block">
+       
+       	<div class="slider-area">
+		<div class="slider-area">
+		
+		
+			<div class="sy-box banner-slider"><div class="sy-slides-wrap"><div class="sy-slides-crop"><section id="home-banner" class="sy-list" style="left: 0%;">
+	<article class="sy-slide horizontal useCSS sy-active" style="left: 0%;">
+		<!--
+		<div class="banner-text">
+			<h2>
+				Vintage bags</h2>
+			<p>
+				Summer styles available</p>
+			<div class="slider-button store-btn button-link">
+				<div class="store-btn-addtocart">
+					<a class="more" href="#">More details</a></div>
+			</div>
+		</div>
+                -->
+		<div class="image-content">
+			<img alt="text" src="/resources/templates/generic/img/banner-resized.jpg"></div>
+	</article>
+</section>
+</div>
+</div>
+</div>
+		</div>
 
 	       	<c:if test="${requestScope.CONTENT['banner']!=null}">
 				<sm:pageContent contentCode="banner"/>
@@ -56,12 +83,10 @@ response.setDateHeader ("Expires", -1);
 											<c:set var="FEATURED" value="true" scope="request" />
 		                         			<jsp:include page="/pages/shop/templates/exoticamobilia/sections/productBox.jsp" />
 						</c:if>
-						<c:if test="${requestScope.SPECIALS!=null}" >
-							<h2 class="hTitle"><s:message code="label.product.specials" text="Specials" /></h2>
-											<!-- Iterate over featuredItems -->
-	                         				<c:set var="ITEMS" value="${requestScope.SPECIALS}" scope="request" />
-		                         			<jsp:include page="/pages/shop/templates/exoticamobilia/sections/productBox.jsp" />
-						</c:if>	
+							<h2 class="hTitle"><s:message code="label.category" text="Services" /></h2>
+											<!-- Iterate over Categories Services -->
+	                         				<c:set var="ITEMS_CAT" value="${requestScope.TOP_CATEGORIES}" scope="request" />
+		                         			<jsp:include page="/pages/shop/templates/exoticamobilia/sections/categoryServices.jsp" />
 			</c:if>
 			</div>
 			

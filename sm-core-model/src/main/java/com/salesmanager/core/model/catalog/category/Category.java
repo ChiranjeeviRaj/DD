@@ -1,7 +1,9 @@
 package com.salesmanager.core.model.catalog.category;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -13,6 +15,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -26,6 +29,7 @@ import com.salesmanager.core.constants.SchemaConstant;
 import com.salesmanager.core.model.common.audit.AuditSection;
 import com.salesmanager.core.model.common.audit.Auditable;
 import com.salesmanager.core.model.generic.SalesManagerEntity;
+import com.salesmanager.core.model.location.Location;
 import com.salesmanager.core.model.merchant.MerchantStore;
 
 @Entity
@@ -85,6 +89,18 @@ public class Category extends SalesManagerEntity<Long, Category> implements Audi
 	@NotEmpty
 	@Column(name="CODE", length=100, nullable=false)
 	private String code;
+	
+	@SuppressWarnings("unused")
+	@ManyToMany(mappedBy = "categories", targetEntity = Location.class)
+	private Set<Location> locations = new HashSet<Location>();
+
+	public Set<Location> getLocations() {
+		return locations;
+	}
+
+	public void setLocations(Set<Location> locations) {
+		this.locations = locations;
+	}
 
 	public String getCode() {
 		return code;

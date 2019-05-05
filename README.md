@@ -19,6 +19,7 @@ https://sequelpro.com/download
 Username : root
 Password : root
 DB Name : SALESMANAGER
+
 $ > mvn clean install
 $ > cd sm-shop
 $ > mvn spring-boot:run

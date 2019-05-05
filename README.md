@@ -25,6 +25,7 @@ $ > cd sm-shop
 $ > mvn spring-boot:run
 
 Test : http://localhost:8080/shop
+
 Admin : Username/Pass = admin/password
 http://localhost:8080/admin/logon.html
 
